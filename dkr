@@ -19,7 +19,7 @@ try:
         else:
                 command = 'docker run -d -i --name %s -v %s -t %s %s' % ( args.name, args.volume, args.template, args.command )
         
-        rint commands.getoutput( command )
+        print commands.getoutput( command )
 
 except KeyboardInterrupt:
         print "You pressed Ctrl+C"
