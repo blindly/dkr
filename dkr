@@ -7,18 +7,18 @@ import argparse
 
 try:
         parser = argparse.ArgumentParser(description='Docker helper')
+        #parser.add_argument('-action', help='Action', default=None, required=True)
         parser.add_argument('-name', help='Container Name', default=None, required=True)
         parser.add_argument('-vhost', help='Vhost Name', default=None, required=False)
         parser.add_argument('-volume',  help='Container Volume', default=None, required=True)
         parser.add_argument('-template',  help='Container Template', default=None, required=True)
-        parser.add_argument('-command',  help='Command to Run', default='bash', required=False)
+        parser.add_argument('-command',  help='Command to Run', default=None, required=False)
         args = parser.parse_args()
 
         if args.vhost is not None:
-                command = 'docker run -d -i --name %s -v /srv/projects/%s:/var/www/html -p 80 -e VIRTUAL_HOST=%s -t %s %s' % ( args.name, args.volume, args.vhost, args.template, args.command )
+                command = 'docker run -d -i --name %s -v /srv/projects/%s:/var/www/html -p 80 -e VIRTUAL_HOST=%s -t %s' % ( args.name, args.volume, args.vhost, args.template )
         else:
                 command = 'docker run -d -i --name %s -v %s -t %s %s' % ( args.name, args.volume, args.template, args.command )
-        
         print commands.getoutput( command )
 
 except KeyboardInterrupt:
