@@ -27,23 +27,25 @@ try:
         cwd = commands.getoutput('pwd')
 
 
-        if ( args.action == "start" ):
+        if args.action == "start":
                 # command = 'docker run -it -v `pwd`:/app -p %s:%s %s %s' % ( args.port, args.port, args.image, args.command )
                 command = 'docker run -d -it --name %s -v %s:/app -p %s %s %s' % ( name, cwd, args.port, args.image, args.command )
                 print command
                 print commands.getoutput( command )
 
-                update = "docker exec -it %s bash -c 'apt update -y && apt install curl -y && curl https://get.volta.sh | bash'" % name
-                print update
-                print commands.getoutput(update)
-                install = "docker exec -it %s bash -c '/root/.volta/bin/volta install node@14'" % name
-                print install
-                print commands.getoutput(install)
-        elif ( args.action == "stop" ):
+                node_needed = commands.getoutput("grep node_modules %s" % cwd)
+                if node_needed:
+                        update = "docker exec -it %s bash -c 'apt update -y && apt install curl -y && curl https://get.volta.sh | bash'" % name
+                        print update
+                        print commands.getoutput(update)
+                        install = "docker exec -it %s bash -c '/root/.volta/bin/volta install node@14'" % name
+                        print install
+                        print commands.getoutput(install)
+        elif args.action == "stop":
                 command = "docker stop %s && docker rm %s" % ( name, name )
                 # print command
                 commands.getoutput( command )
-        elif ( args.action == "run" ):
+        elif args.action == "run":
                 running_port_command = "docker ps|grep %s|sed 's/.*0.0.0.0://g'|sed 's/->.*//g'" % name
 
                 running_port = commands.getoutput( running_port_command )
