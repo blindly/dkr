@@ -1,25 +1,58 @@
 #!/bin/env python
 # github.com/blindly
-# 5/15/2014
+# 5/29/2022
+import os
 import sys
 import commands
 import argparse
 
+def cmd(cmd):
+    cmd = cmd.split()
+    code = os.spawnvpe(os.P_WAIT, cmd[0], cmd, os.environ)
+    if code == 127:
+        sys.stderr.write('{0}: command not found\n'.format(cmd[0]))
+    return code
+
 try:
         parser = argparse.ArgumentParser(description='Docker helper')
-        #parser.add_argument('-action', help='Action', default=None, required=True)
-        parser.add_argument('-name', help='Container Name', default=None, required=True)
-        parser.add_argument('-vhost', help='Vhost Name', default=None, required=False)
-        parser.add_argument('-volume',  help='Container Volume', default=None, required=True)
-        parser.add_argument('-template',  help='Container Template', default=None, required=True)
-        parser.add_argument('-command',  help='Command to Run', default=None, required=False)
+        parser.add_argument('-action', help='Action', default=None, required=True)
+        parser.add_argument('-port', help='Container Port', default="3000", required=False)
+        # parser.add_argument('-vhost', help='Vhost Name', default=None, required=False)
+        # parser.add_argument('-volume',  help='Container Volume', default=None, required=True)
+        parser.add_argument('-image',  help='Container Image', default="ubuntu", required=False)
+        parser.add_argument('-command',  help='Command to Run', default="bash", required=False)
         args = parser.parse_args()
 
-        if args.vhost is not None:
-                command = 'docker run -d -i --name %s -v /srv/projects/%s:/var/www/html -p 80 -e VIRTUAL_HOST=%s -t %s' % ( args.name, args.volume, args.vhost, args.template )
-        else:
-                command = 'docker run -d -i --name %s -v %s -t %s %s' % ( args.name, args.volume, args.template, args.command )
-        print commands.getoutput( command )
+        name = commands.getoutput('basename `pwd`')
+        cwd = commands.getoutput('pwd')
+
+
+        if ( args.action == "start" ):
+                # command = 'docker run -it -v `pwd`:/app -p %s:%s %s %s' % ( args.port, args.port, args.image, args.command )
+                command = 'docker run -d -it --name %s -v %s:/app -p %s %s %s' % ( name, cwd, args.port, args.image, args.command )
+                print command
+                print commands.getoutput( command )
+
+                update = "docker exec -it %s bash -c 'apt update -y && apt install curl -y && curl https://get.volta.sh | bash'" % name
+                print update
+                print commands.getoutput(update)
+                install = "docker exec -it %s bash -c '/root/.volta/bin/volta install node@14'" % name
+                print install
+                print commands.getoutput(install)
+        elif ( args.action == "stop" ):
+                command = "docker stop %s && docker rm %s" % ( name, name )
+                # print command
+                commands.getoutput( command )
+        elif ( args.action == "run" ):
+                running_port_command = "docker ps|grep %s|sed 's/.*0.0.0.0://g'|sed 's/->.*//g'" % name
+
+                running_port = commands.getoutput( running_port_command )
+                if (running_port):
+                        print "Exposed port at http://localhost:%s" % running_port
+
+                command = "docker exec -it %s bash" % ( name )
+                # print command
+                cmd( command )
 
 except KeyboardInterrupt:
         print "You pressed Ctrl+C"
