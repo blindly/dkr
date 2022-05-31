@@ -1,4 +1,4 @@
-dkr
+dkr / pdm
 ===
 
-Docker ( alias ) utility
+Docker or Podman alias utility for easy development
