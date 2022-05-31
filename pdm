@@ -1,0 +1,83 @@
+#!/bin/env python
+# github.com/blindly
+# 5/29/2022
+import os
+import sys
+import commands
+import argparse
+
+def cmd(cmd):
+    cmd = cmd.split()
+    code = os.spawnvpe(os.P_WAIT, cmd[0], cmd, os.environ)
+    if code == 127:
+        sys.stderr.write('{0}: command not found\n'.format(cmd[0]))
+    return code
+
+try:
+        parser = argparse.ArgumentParser(description='podman helper')
+        parser.add_argument('action', help='Action', default="status")
+        parser.add_argument('-port', help='Container Port', default="3000", required=False)
+        parser.add_argument('-image',  help='Container Image', default="ubuntu", required=False)
+        parser.add_argument('-command',  help='Command to Run', default="bash", required=False)
+        parser.add_argument('--verbose', '-v', action='count', default=0)
+        args = parser.parse_args()
+
+        name = commands.getoutput('basename `pwd`')
+        cwd = commands.getoutput('pwd')
+
+        # print args.action
+        # sys.exit()
+
+        if args.action == "start":
+                command = 'podman run -d -it --name %s -v %s:/app -p %s %s %s' % ( name, cwd, args.port, args.image, args.command )
+                if args.verbose:
+                        print command
+                print commands.getoutput( command )
+
+                node_needed = commands.getoutput("grep node_modules %s" % cwd)
+                if node_needed:
+                        update = "podman exec -it %s bash -c 'apt update -y && apt install curl -y && curl https://get.volta.sh | bash'" % name
+                        if args.verbose:
+                                print update
+                        print commands.getoutput(update)
+                        install = "podman exec -it %s bash -c '/root/.volta/bin/volta install node@14'" % name
+                        if args.verbose:
+                                print install
+                        print commands.getoutput(install)
+        elif args.action == "stop":
+                command = "podman stop %s && podman rm %s" % ( name, name )
+                
+                if args.verbose:
+                        print command
+                
+                commands.getoutput( command )
+        elif args.action == "status":
+                command = "podman ps --noheading"
+                
+                if args.verbose:
+                        print command
+                
+                print commands.getoutput( command )
+        elif args.action == "run":
+                running_port_command = "podman ps|grep %s|sed 's/.*0.0.0.0://g'|sed 's/->.*//g'" % name
+
+                if args.verbose:
+                        print running_port_command
+                
+                running_port = commands.getoutput( running_port_command )
+                
+                if (running_port):
+                        print "Exposed port at http://localhost:%s" % running_port
+
+                command = "podman exec -it %s bash" % ( name )
+                
+                if args.verbose:
+                        print command
+                
+                cmd( command )
+
+except KeyboardInterrupt:
+        print "You pressed Ctrl+C"
+        sys.exit()
+except Exception, e:
+        print e
